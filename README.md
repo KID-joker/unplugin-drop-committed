@@ -1,1 +1,1 @@
-# unplugin-drop-committed-console
+# unplugin-drop-committed

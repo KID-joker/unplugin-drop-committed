@@ -1,24 +1,24 @@
 {
-  "name": "unplugin-drop-committed-console",
+  "name": "unplugin-drop-committed",
   "type": "module",
   "version": "0.1.0",
   "description": "",
   "author": "KID-joker <kid_joker@126.com>",
   "license": "MIT",
-  "homepage": "https://github.com/KID-joker/unplugin-drop-committed-console#readme",
+  "homepage": "https://github.com/KID-joker/unplugin-drop-committed#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KID-joker/unplugin-drop-committed-console.git"
+    "url": "git+https://github.com/KID-joker/unplugin-drop-committed.git"
   },
   "bugs": {
-    "url": "https://github.com/KID-joker/unplugin-drop-committed-console/issues"
+    "url": "https://github.com/KID-joker/unplugin-drop-committed/issues"
   },
   "keywords": [
     "unplugin",
     "vite",
     "webpack",
     "rollup",
-    "drop-console",
+    "drop-committed",
     "committed",
     "staged"
   ],
@@ -84,8 +84,6 @@
   "dependencies": {
     "@babel/parser": "^7.25.6",
     "@babel/traverse": "^7.25.6",
-    "@jridgewell/trace-mapping": "^0.3.25",
-    "@rollup/pluginutils": "^5.1.0",
     "magic-string": "^0.30.11",
     "unplugin": "^1.11.0",
     "which": "^4.0.0"

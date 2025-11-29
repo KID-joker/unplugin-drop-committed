@@ -79,6 +79,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint . --fix",
+    "test": "vitest",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -95,6 +96,7 @@
     "@types/which": "^3.0.4",
     "eslint": "^9.7.0",
     "tsup": "^8.2.0",
-    "typescript": "^5.5.3"
+    "typescript": "^5.5.3",
+    "vitest": "^4.0.14"
   }
 }

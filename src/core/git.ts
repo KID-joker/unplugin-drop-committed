@@ -5,8 +5,9 @@ import path from 'node:path'
 import { exec, execFile, spawn } from 'node:child_process'
 import type { ExecFileException } from 'node:child_process'
 import type { Buffer } from 'node:buffer'
+import fs from 'node:fs/promises'
 import which from 'which'
-import { getLines } from './utils'
+import { getLines, parseGitignore } from './utils'
 
 export enum Status {
   INDEX_MODIFIED,
@@ -40,6 +41,15 @@ export interface BlameEntry {
 }
 
 export const uncommitted = '0000000000000000000000000000000000000000'
+
+// Cache structure
+interface GitCache {
+  blame: Map<string, Map<number, BlameEntry>> // filepath -> line -> blame
+  fileStatus: Map<string, { status: Status | undefined, mtime: number }>
+  userInfo: { name: string, email: string } | null
+  gitignorePatterns: string[] | null
+  commitTime: Map<string, number> // sha -> timestamp
+}
 
 function findSpecificGit(path: string): Promise<string> {
   return new Promise<string>((resolve, reject) => {
@@ -225,6 +235,14 @@ function parseBlame(data: string): BlameEntry | undefined {
 }
 
 export function createGit() {
+  const cache: GitCache = {
+    blame: new Map(),
+    fileStatus: new Map(),
+    userInfo: null,
+    gitignorePatterns: null,
+    commitTime: new Map(),
+  }
+
   function checkIsRepo(): Promise<boolean> {
     return runGit(['rev-parse', '--is-inside-work-tree'])
       .then((text: string) => text.trim() === 'true')
@@ -239,15 +257,123 @@ export function createGit() {
   }
 
   async function getStatus(path: string): Promise<Status | undefined> {
-    const args = ['status', '-z', '-uall', path]
-    const data = await runGit(args).then((text: string) => ({ x: text.charAt(0), y: text.charAt(1) }))
-    return parseStatus(data)
+    // Check cache with mtime validation
+    try {
+      const stats = await fs.stat(path)
+      const cached = cache.fileStatus.get(path)
+
+      if (cached && cached.mtime === stats.mtimeMs) {
+        return cached.status
+      }
+
+      // Fetch fresh status
+      const args = ['status', '-z', '-uall', path]
+      const data = await runGit(args).then((text: string) => ({ x: text.charAt(0), y: text.charAt(1) }))
+      const status = parseStatus(data)
+
+      // Update cache
+      cache.fileStatus.set(path, { status, mtime: stats.mtimeMs })
+      return status
+    }
+    catch {
+      return undefined
+    }
   }
 
   async function getBlame(path: string, lineNum: number): Promise<BlameEntry | undefined> {
+    // Check cache
+    const fileCache = cache.blame.get(path)
+    if (fileCache?.has(lineNum)) {
+      return fileCache.get(lineNum)
+    }
+
+    // Fetch fresh blame
     const args = ['blame', '--root', '--incremental', `-L ${lineNum},${lineNum}`, '--', path]
     const data = await runGit(args)
-    return parseBlame(data)
+    const entry = parseBlame(data)
+
+    // Update cache
+    if (entry) {
+      if (!cache.blame.has(path)) {
+        cache.blame.set(path, new Map())
+      }
+      cache.blame.get(path)!.set(lineNum, entry)
+    }
+
+    return entry
+  }
+
+  async function getCurrentUser(): Promise<{ name: string, email: string }> {
+    // Check cache
+    if (cache.userInfo) {
+      return cache.userInfo
+    }
+
+    // Fetch user info
+    const name = await getCurrentConfig('user.name')
+    const email = await getCurrentConfig('user.email')
+
+    const userInfo = { name, email }
+    cache.userInfo = userInfo
+    return userInfo
+  }
+
+  async function getCommitTime(sha: string): Promise<number> {
+    // Check cache
+    if (cache.commitTime.has(sha)) {
+      return cache.commitTime.get(sha)!
+    }
+
+    // Fetch commit timestamp
+    const args = ['show', '-s', '--format=%ct', sha]
+    const data = await runGit(args)
+    const timestamp = Number.parseInt(data.trim(), 10) * 1000 // Convert to milliseconds
+
+    // Update cache
+    cache.commitTime.set(sha, timestamp)
+    return timestamp
+  }
+
+  async function loadGitignorePatterns(): Promise<string[]> {
+    // Check cache
+    if (cache.gitignorePatterns) {
+      return cache.gitignorePatterns
+    }
+
+    try {
+      // Get git root directory
+      const gitRoot = await runGit(['rev-parse', '--show-toplevel']).then(s => s.trim())
+      const gitignorePath = path.join(gitRoot, '.gitignore')
+
+      // Read .gitignore file
+      const content = await fs.readFile(gitignorePath, 'utf-8')
+      const patterns = parseGitignore(content)
+
+      // Update cache
+      cache.gitignorePatterns = patterns
+      return patterns
+    }
+    catch {
+      // If .gitignore doesn't exist, return empty array
+      cache.gitignorePatterns = []
+      return []
+    }
+  }
+
+  function invalidateCache(filePath?: string) {
+    if (filePath) {
+      // Invalidate specific file
+      cache.blame.delete(filePath)
+      cache.fileStatus.delete(filePath)
+    }
+    else {
+      // Invalidate all
+      cache.blame.clear()
+      cache.fileStatus.clear()
+      cache.userInfo = null
+      cache.gitignorePatterns = null
+      cache.commitTime.clear()
+    }
   }
 
   return {
@@ -256,5 +382,9 @@ export function createGit() {
     getCurrentConfig,
     getStatus,
     getBlame,
+    getCurrentUser,
+    getCommitTime,
+    loadGitignorePatterns,
+    invalidateCache,
   }
 }

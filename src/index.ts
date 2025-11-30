@@ -3,6 +3,8 @@ import { createUnplugin } from 'unplugin'
 import type { Options } from './types'
 import { createContext } from './core/ctx'
 
+export type { Options } from './types'
+
 export const unpluginFactory: UnpluginFactory<Options | undefined> = (options) => {
   const ctx = createContext(options)
   return {

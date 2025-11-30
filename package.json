@@ -80,7 +80,7 @@
     "dev": "tsup --watch",
     "lint": "eslint . --fix",
     "test": "vitest",
-    "typecheck": "tsc"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@babel/parser": "^7.25.6",

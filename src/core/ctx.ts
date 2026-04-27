@@ -29,41 +29,20 @@ export function createContext(options: Options = {}) {
 
   // Initialize Git operations
   const git = createGit()
-
-  // Load gitignore patterns
-  let gitignorePatterns: string[] = []
-  git.loadGitignorePatterns().then((patterns) => {
-    gitignorePatterns = patterns
-  })
-
-  // Check if in a git repository
-  let isGitRepo = false
-  git.checkIsRepo().then((result) => {
-    isGitRepo = result
-    if (!isGitRepo) {
-      console.warn('[unplugin-drop-committed] Not in a Git repository. Plugin will be disabled.')
-    }
-  }).catch(() => {
+  const gitTasks = Promise.all([git.loadGitignorePatterns(), git.checkIsRepo().catch(() => {
     console.warn('[unplugin-drop-committed] Failed to check Git repository status.')
-  })
+    return false
+  })])
 
   /**
    * Filter function to determine if file should be transformed
    */
   function filter(id: string): boolean {
-    if (!isGitRepo) {
-      return false
-    }
 
     const cleanId = cleanUrl(id)
 
     // Always exclude node_modules
     if (cleanId.includes('node_modules')) {
-      return false
-    }
-
-    // Check against gitignore patterns
-    if (gitignorePatterns.length > 0 && matchesPattern(cleanId, gitignorePatterns)) {
       return false
     }
 
@@ -84,11 +63,20 @@ export function createContext(options: Options = {}) {
    * Transform function
    */
   async function transform(code: string, id: string) {
+    const [gitignorePatterns, isGitRepo] = await gitTasks;
+
     if (!isGitRepo) {
+      console.warn('[unplugin-drop-committed] Not in a Git repository. Plugin will be disabled.')
       return null
     }
 
     const cleanId = cleanUrl(id)
+
+    // Check against gitignore patterns
+    if (gitignorePatterns.length > 0 && matchesPattern(cleanId, gitignorePatterns)) {
+      return null
+    }
+
     return await transformCode(code, cleanId, resolved, git)
   }
 

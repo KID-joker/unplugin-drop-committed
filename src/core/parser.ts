@@ -1,7 +1,9 @@
 import { parse } from '@babel/parser'
-import traverse from '@babel/traverse'
+import babelTraverse from '@babel/traverse'
 import type { CallExpression, MemberExpression, Node } from '@babel/types'
 import type { MethodCallLocation } from '../types'
+
+const traverse = typeof babelTraverse === 'function' ? babelTraverse : (babelTraverse as any).default
 
 /**
  * Get the full method name from a member expression
@@ -50,7 +52,7 @@ export function findMethodCalls(
 
     // Traverse AST to find call expressions
     traverse(ast, {
-      CallExpression(path) {
+      CallExpression(path: any) {
         const node = path.node as CallExpression
 
         // Check if callee is a member expression (e.g., console.log)

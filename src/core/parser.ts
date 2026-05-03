@@ -64,8 +64,8 @@ export function findMethodCalls(
             const loc = node.loc
             if (loc) {
               locations.push({
-                start: node.start!,
-                end: node.end!,
+                start: node.callee.start!,
+                end: node.callee.end!,
                 line: loc.start.line + lineOffset,
                 column: loc.start.column,
                 methodName,
@@ -81,8 +81,8 @@ export function findMethodCalls(
             const loc = node.loc
             if (loc) {
               locations.push({
-                start: node.start!,
-                end: node.end!,
+                start: node.callee.start!,
+                end: node.callee.end!,
                 line: loc.start.line + lineOffset,
                 column: loc.start.column,
                 methodName,

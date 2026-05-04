@@ -44,8 +44,6 @@ export const uncommitted = '0000000000000000000000000000000000000000'
 
 // Cache structure
 interface GitCache {
-  blame: Map<string, Map<number, BlameEntry>> // filepath -> line -> blame
-  fileStatus: Map<string, { status: Status | undefined, mtime: number }>
   userInfo: { name: string, email: string } | null
   gitignorePatterns: string[] | null
   commitTime: Map<string, number> // sha -> timestamp
@@ -236,8 +234,6 @@ function parseBlame(data: string): BlameEntry | undefined {
 
 export function createGit() {
   const cache: GitCache = {
-    blame: new Map(),
-    fileStatus: new Map(),
     userInfo: null,
     gitignorePatterns: null,
     commitTime: new Map(),
@@ -257,22 +253,12 @@ export function createGit() {
   }
 
   async function getStatus(path: string): Promise<Status | undefined> {
-    // Check cache with mtime validation
     try {
-      const stats = await fs.stat(path)
-      const cached = cache.fileStatus.get(path)
-
-      if (cached && cached.mtime === stats.mtimeMs) {
-        return cached.status
-      }
-
       // Fetch fresh status
       const args = ['status', '-z', '-uall', path]
       const data = await runGit(args).then((text: string) => ({ x: text.charAt(0), y: text.charAt(1) }))
       const status = parseStatus(data)
 
-      // Update cache
-      cache.fileStatus.set(path, { status, mtime: stats.mtimeMs })
       return status
     }
     catch {
@@ -281,24 +267,10 @@ export function createGit() {
   }
 
   async function getBlame(path: string, lineNum: number): Promise<BlameEntry | undefined> {
-    // Check cache
-    const fileCache = cache.blame.get(path)
-    if (fileCache?.has(lineNum)) {
-      return fileCache.get(lineNum)
-    }
-
     // Fetch fresh blame
     const args = ['blame', '--root', '--incremental', `-L ${lineNum},${lineNum}`, '--', path]
     const data = await runGit(args)
     const entry = parseBlame(data)
-
-    // Update cache
-    if (entry) {
-      if (!cache.blame.has(path)) {
-        cache.blame.set(path, new Map())
-      }
-      cache.blame.get(path)!.set(lineNum, entry)
-    }
 
     return entry
   }
@@ -360,20 +332,10 @@ export function createGit() {
     }
   }
 
-  function invalidateCache(filePath?: string) {
-    if (filePath) {
-      // Invalidate specific file
-      cache.blame.delete(filePath)
-      cache.fileStatus.delete(filePath)
-    }
-    else {
-      // Invalidate all
-      cache.blame.clear()
-      cache.fileStatus.clear()
-      cache.userInfo = null
-      cache.gitignorePatterns = null
-      cache.commitTime.clear()
-    }
+  function invalidateCache() {
+    cache.userInfo = null
+    cache.gitignorePatterns = null
+    cache.commitTime.clear()
   }
 
   return {

@@ -67,7 +67,7 @@ export async function transform(
     const s = new MagicString(code)
 
     for (const call of allCallsToRemove) {
-      s.overwrite(call.start, call.end, ';(() => {})')
+      s.overwrite(call.start, call.end, ';((..._args) => {})')
     }
 
     return {

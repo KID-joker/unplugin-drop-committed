@@ -87,19 +87,7 @@ export function parseExpiration(exp: string): number {
  */
 export function isDevEnvironment(): boolean {
   // Check NODE_ENV
-  if (process.env.NODE_ENV === 'production') {
-    return false
-  }
-
-  // Check common build tool dev indicators
-  const devIndicators = [
-    process.env.NODE_ENV === 'development',
-    process.env.VITE_DEV === 'true',
-    process.env.WEBPACK_DEV_SERVER === 'true',
-    process.env.ROLLUP_WATCH === 'true',
-  ]
-
-  return devIndicators.some(Boolean)
+  return process.env.NODE_ENV !== 'production'
 }
 
 /**

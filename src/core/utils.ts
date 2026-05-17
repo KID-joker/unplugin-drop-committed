@@ -97,10 +97,12 @@ export function matchesPattern(filePath: string, patterns: (string | RegExp)[]):
   return patterns.some((pattern) => {
     if (typeof pattern === 'string') {
       // Simple glob-like matching
+      const DOUBLESTAR = 'DOUBLESTAR'
       const regexPattern = pattern
         .replace(/\./g, '\\.')
-        .replace(/\*\*/g, '.*')
+        .replace(/\*\*/g, DOUBLESTAR)
         .replace(/\*/g, '[^/]*')
+        .replace(new RegExp(DOUBLESTAR, 'g'), '.*')
         .replace(/\?/g, '.')
       return new RegExp(`^${regexPattern}$`).test(filePath)
     }

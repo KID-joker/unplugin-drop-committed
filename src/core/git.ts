@@ -147,7 +147,7 @@ function runGit(args: any[]) {
   return findGit().then((path: string) => run(path, args))
 }
 
-function parseStatus(raw: { x: string, y: string }) {
+export function parseStatus(raw: { x: string, y: string }) {
   switch (raw.x + raw.y) {
     case '??': return Status.UNTRACKED
     case '!!': return Status.IGNORED
@@ -179,7 +179,7 @@ function parseStatus(raw: { x: string, y: string }) {
   return undefined
 }
 
-function parseBlame(data: string): BlameEntry | undefined {
+export function parseBlame(data: string): BlameEntry | undefined {
   if (!data)
     return
 

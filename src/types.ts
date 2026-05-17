@@ -25,7 +25,7 @@ export interface Options {
 
   /**
    * File exclusion patterns (always includes node_modules and .gitignore files)
-   * @default ['node_modules/**']
+   * @default []
    */
   exclude?: (string | RegExp)[]
 

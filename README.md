@@ -225,7 +225,7 @@ export default {
 1. **Environment Check**: Only runs in development mode
 2. **Git Integration**: Uses Git blame and status to determine removal
 3. **AST Parsing**: Uses Babel to accurately find method calls
-4. **Smart Replacement**: Replaces calls with `(() => {})` to maintain code structure
+4. **Smart Replacement**: Replaces calls with `((..._args) => {})` to maintain code structure
 5. **Caching**: Caches Git operations for better performance
 
 ## Performance
@@ -233,8 +233,6 @@ export default {
 The plugin implements several optimizations:
 
 - ✅ Git operation results are cached
-- ✅ File modification time tracking for cache invalidation
-- ✅ Incremental processing of changed files
 - ✅ Automatic skip in production builds
 
 ## Requirements

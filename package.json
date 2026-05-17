@@ -2,7 +2,7 @@
   "name": "unplugin-drop-committed",
   "type": "module",
   "version": "0.1.0",
-  "description": "",
+  "description": "An unplugin that automatically removes committed code (like console.log) from your codebase based on Git history.",
   "author": "KID-joker <kid_joker@126.com>",
   "license": "MIT",
   "homepage": "https://github.com/KID-joker/unplugin-drop-committed#readme",
